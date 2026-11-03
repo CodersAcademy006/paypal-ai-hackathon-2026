@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Shopping Agent — PayPal</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Shop with an agent</h1>
+    <canvas id="flourish" width="220" height="24" aria-hidden="true"></canvas>
+    <p class="sub">Tell it what you need. It builds the cart. You pay with PayPal sandbox.</p>
+  </header>
+
+  <main>
+    <section id="chat-panel">
+      <div id="messages" aria-live="polite"></div>
+      <form id="chat-form">
+        <input id="chat-input" type="text" placeholder="e.g. I need something for a rainy commute" autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <aside id="cart-panel">
+      <h2>Cart</h2>
+      <ul id="cart-items"></ul>
+      <p id="cart-total"></p>
+      <div id="paypal-button-container"></div>
+      <p id="order-status" role="status"></p>
+    </aside>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js" defer></script>
+  <script src="flourish.js" defer></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
