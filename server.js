@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CATALOG, findById } from "./lib/catalog.js";
-import { chatTurn } from "./lib/claude.js";
+import { chatTurn } from "./lib/agent.js";
 import { createOrder, captureOrder } from "./lib/paypal.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -65,7 +65,7 @@ const server = http.createServer(async (req, res) => {
         JSON.stringify({
           reply: result.reply,
           cart: enrichCart(result.cart),
-          checkoutReady: result.checkout_ready,
+          checkoutReady: Boolean(result.checkout_ready),
         })
       );
       return;
