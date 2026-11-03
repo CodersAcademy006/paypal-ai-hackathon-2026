@@ -1,0 +1,13 @@
+{
+  "name": "paypal-ai-shopping-agent",
+  "version": "0.1.0",
+  "description": "Agentic commerce demo: chat with an AI shopping agent, it builds your cart and checks out with PayPal sandbox.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node --env-file=.env server.js"
+  },
+  "engines": {
+    "node": ">=20.6.0"
+  }
+}
