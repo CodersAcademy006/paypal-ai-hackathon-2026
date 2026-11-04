@@ -13,7 +13,7 @@ through a real PayPal sandbox order (create → approve → capture). Agentic co
   "add to cart" button. The only way items enter the cart is the agent deciding to put them
   there, via a forced tool call (`update_cart`) so its output is always a real cart object,
   never free text that happens to look like one.
-- **Zero paid APIs.** The AI runs locally via [Ollama](https://ollama.com) (`llama3.2:3b`,
+- **Zero paid APIs.** The AI runs locally via [Ollama](https://ollama.com) (`qwen2.5:7b`,
   tool-calling capable) — no Anthropic/OpenAI key, no billing risk. PayPal's own sandbox is
   free by design. Total cost to run or judge this project: $0.
 
@@ -25,7 +25,7 @@ through a real PayPal sandbox order (create → approve → capture). Agentic co
    ```
    brew install ollama        # or see ollama.com/download
    brew services start ollama
-   ollama pull llama3.2:3b
+   ollama pull qwen2.5:7b
    ```
 3. **PayPal sandbox app** (free): log into https://developer.paypal.com → Dashboard → Apps &
    Credentials → Sandbox → Create App. Copy the Client ID and Secret.
@@ -52,8 +52,9 @@ lib/paypal.js ── PayPal Orders v2 REST (sandbox), create → buyer approves 
 
 - `lib/catalog.js` — fixed 10-item catalog, source of truth for prices.
 - `lib/agent.js` — talks to Ollama, forces a structured `update_cart` tool call so the model's
-  output is always a parseable cart, never prose. Defensively coerces the odd stringified field
-  a 3B model occasionally emits.
+  output is always a parseable cart, never prose. Recovers three malformed shapes seen in
+  testing (JSON embedded in prose, `{parameters}`/`{arguments}` envelopes, a bare `{id,qty}`
+  with no envelope at all) instead of silently dropping them. Temperature 0 for determinism.
 - `lib/paypal.js` — thin wrapper over PayPal's REST API (`fetch`, no SDK dependency) for
   OAuth client-credentials, order create, and capture.
 - `server.js` — zero-dependency `node:http` server: static files + 4 JSON routes.
@@ -62,10 +63,24 @@ lib/paypal.js ── PayPal Orders v2 REST (sandbox), create → buyer approves 
 
 ## Swapping the model
 
-`lib/agent.js` reads `OLLAMA_MODEL` (default `llama3.2:3b`) and `OLLAMA_HOST`
-(default `http://localhost:11434`) from the environment — swap to a bigger local model
-(`qwen2.5:7b` tested well for instruction-following) or point `OLLAMA_HOST` at any
-OpenAI/Ollama-compatible endpoint without touching code.
+`lib/agent.js` reads `OLLAMA_MODEL` (default `qwen2.5:7b`) and `OLLAMA_HOST`
+(default `http://localhost:11434`) from the environment — point at any local model or any
+OpenAI/Ollama-compatible endpoint without touching code. `llama3.2:3b` also runs (faster,
+smaller) but was measurably less reliable at tracking cart state across turns in testing —
+see `scripts/demo_repro_test.js`.
+
+## Known limitation
+
+One specific conversational pattern is unreliable: a bare "yes" right after the agent has
+suggested *more than one* item, followed immediately by naming one of them by name. The model
+correctly asks "which one?" but the follow-up naming sometimes fails to register (tracked in
+`scripts/demo_repro_test.js`, root-caused to the model occasionally emitting a bare `{id, qty}`
+tool call with no reply/cart envelope in that exact context — partially mitigated, not fully
+fixed). Workaround used in the demo: avoid that exact sequence — either confirm a single
+suggested item directly, or use explicit checkout language ("yes checkout") to confirm
+everything suggested at once. Both of those patterns tested 100% reliable across 20+ runs.
+Per the official rules, judges are not required to run the project themselves and may judge
+from the video alone, so the recorded demo uses only the reliable patterns.
 
 ## Judging criteria fit
 
@@ -79,7 +94,10 @@ OpenAI/Ollama-compatible endpoint without touching code.
 
 ## Status
 
-Backend fully wired and tested end-to-end against a live local Ollama instance (multi-turn
-cart building, checkout-confirmation detection, server-side total calculation all verified
-working 2026-11-04). **Not yet tested against real PayPal sandbox credentials** — waiting on
-a developer.paypal.com account. Demo video and Devpost submission text not yet written.
+Backend fully wired and tested end-to-end against a live local Ollama instance. UI redesigned
+(PayPal-accent palette, typing indicator, quick prompts, voice input, order receipt). Agent
+reliability hardened and verified deterministic (temperature 0, byte-identical output across
+5 runs of the exact demo script — see "Known limitation" above for the one pattern still
+avoided rather than fixed). **Not yet tested against real PayPal sandbox credentials** —
+waiting on a developer.paypal.com account. Demo video and Devpost submission text not yet
+written. Repo not yet pushed to GitHub (required for the public-repo submission rule).
